@@ -1,0 +1,15 @@
+
+echo "Execution started:"
+date
+
+module load gaussian
+
+cp $PBS_O_WORKDIR/*.gjf ./
+cp $PBS_O_WORKDIR/*.chk ./
+
+pbsexec g09 *.gjf
+
+echo "Gaussian job finished:"
+date
+
+cp * $PBS_O_WORKDIR
