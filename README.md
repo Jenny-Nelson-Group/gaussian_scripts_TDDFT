@@ -6,9 +6,9 @@ Here are a few scripts I have been using to write input files for Gaussian DFT a
 ### Writing input files
 
 
-- To generate input files for a single point energy calculation, a geometry optimisation, an excited state calculation or post-processing (saving natural Transition Orbitals or performing a population analysis), `write_ginput.sh` can be used. The only other input file needed is a geomtry file for the system. NB: the file `run_gauss.txt` has to be in the same directory.
+- To generate input files for a single point energy calculation, a geometry optimisation, an excited state calculation or post-processing (saving Natural Transition Orbitals or performing a population analysis), `write_ginput.sh` can be used. The only other input file needed is a geomtry file for the system. NB: the file `run_gauss.txt` has to be in the same directory.
 
-- To generate a geometry file for a pair of molecules (or oligomers) and generate input files (and optionally automatically submit the calculation to cx1) `write_pairs.sh` can be used. The only other input files needed are the geomtry files for the two molecules.
+- To generate a geometry files for pairs of molecules at different distances and generate input files for single point energy calculations (and optionally automatically submit the calculation to cx1) `write_pairs.sh` can be used. The only other input files needed are the geomtry files for the two molecules.
 
 
 
