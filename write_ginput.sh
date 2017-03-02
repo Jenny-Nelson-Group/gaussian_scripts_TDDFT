@@ -1,6 +1,10 @@
 #!/bin/bash
 
+###################################
 ### Alise Virbule, 1st May 2016 ###
+###################################
+### Based on Jarv's launch_coms ###
+###################################
 
 ####################################################
 ################  FILE PATHS  ######################
@@ -37,32 +41,15 @@ function USAGE()
 	The folders and files for the calculation will be created in /calc_path/ 
 	##  geom_path and calc_path can be changed at the top of this file
 
-#######################  EXAMPLES  ############################
-
-	Geometry optimisation in chloroform using the wB97XD functional for dithiophene (geometry in file 2T_alt_D0.xyz)
-		(from bin) ./write_ginput.sh -c opt -s chloroform -f wB97XD -w 00:30:00 2T_alt_D0
-	The script will create a folder /calc_path/2T_alt_D0/ and write a Gaussian input file (.gjf) and a bash run file (.sh) to be submitted to a queue using qsub
-	(same for an opt caluclation)
-
-	Calculate 30 excited states (TDDFT) for thiophene 22-mer using default basis set and XC functional
-		(from sp or opt folder) ~/bin/write_ginput.sh -c td -t 30 -w 05:00:00 22T_alt
-	The script will create a folder /td30_CAM-B3LYP_cc-pVDZ/, copy the checkpoint file (.chk) from the sp or opt calculation into it (for geometry and wavefunction guess),
-	and also write a Gaussian input file (.gjf) and a bash run file (.sh) to be submitted to the cx1 queues using qsub
-
-	Perform a CHelpG population analysis on the first 20 excited states of benzene
-		(from td folder) ~/bin/write_ginput.sh -c pop -e CHelpG -t 20 -m 7000 -p 8 -w 00:30:00 benzene
-	The script will create a folder /pop20_CHelpG/ and copy over the "master" checkpoint file (_master.chk), which contains all the transition densities,
-	pop20_CHelpG will also contain folders state_01 up to state_20, each of these folders contains a separate Gaussian input file (.gjf) and bash run script (.sh).
-	The calculations on each excitet state can be submitted separately using qsub, or the script ~/bin/run_states.sh can be used.
-	(similar for nto calculation)  
 	
 ###################  Calculation MODES  #######################
 		
-Single point energy:			sp (run from bin) 
-Geometry optimisation:			opt (run from bin)		- can add solvent
-TDDFT:					td (run from opt or sp folder)	- can add solvent
-Save Natural Transition Orbitals:	nto (run from td folder)
-Population Analysis:			pop (run from td folder)
+Single point energy:			sp	(run from bin) 
+Geometry optimisation:			opt	(run from bin)			- can add solvent
+Vibrational frequencies:		freq	(run from opt or sp folder)
+TDDFT:					td	(run from opt or sp folder)	- can add solvent
+Save Natural Transition Orbitals:	nto	(run from td folder)
+Population Analysis:			pop	(run from td folder)
 
 ######################  OPTIONS  ###############################
 
@@ -240,6 +227,38 @@ EOF
 #copy commands to run Gaussian from template file
 	cat ~/bin/run_gauss.txt >> $gjfname.sh
 
+	####################################################
+	###### Frequency (IR) calculation (no solvent) ######
+	####################################################
+
+elif [ "$calc" == "freq" ] && [ "$solvent" == "none" ];then
+#create folder for calculation
+	mkdir ${calc}_${funct}_${bas}
+	cd ${calc}_${funct}_${bas}
+#copy chk file from optimised structure into TD folder
+	cp ../*.chk $gjfname.chk
+#write Gaussian input file (don't need geometry file, as this will be read from the chk file)
+	cat > $gjfname.gjf << EOF
+%oldchk=$gjfname
+%chk=${gjfname}_master
+%mem=${mem}MB
+%nprocshared=$nproc
+#p ${funct}/${bas} geom=checkpoint guess=read freq
+
+Calculate vibrational frequencies (IR intensities)
+
+0 1
+
+EOF
+#write top of bash run file
+	cat > $gjfname.sh << EOF
+#!/bin/sh
+#PBS -l walltime=$wallt
+#PBS -l select=$nnodes:ncpus=$nproc:mem=${memsh}MB
+#PBS -m e
+EOF
+#copy in commands to run Gaussian from template
+	cat ~/bin/run_gauss.txt >> $gjfname.sh
 
 	####################################################
 	###### Excited state calculation (no solvent) ######
@@ -594,7 +613,7 @@ echo "Gaussian job finished:"
 date
 
 EOF
-		echo "cp *.log $""PBS_O_WORKDIR" >> ${gjfname}.sh
+		echo "cp * $""PBS_O_WORKDIR" >> ${gjfname}.sh
 		cd ..
 	done
 #this done finishes for loop over all ntd excited states
